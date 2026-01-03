@@ -1,0 +1,118 @@
+.poChatBubble{
+  position: fixed;
+  right: 14px;
+  bottom: 78px; /* sits above your existing stickyTools */
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(15,26,51,.85);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  font-weight: 900;
+  z-index: 70;
+}
+.poChatBubble:hover{ background: rgba(15,26,51,.95); }
+
+.poChatPanel{
+  position: fixed;
+  right: 14px;
+  bottom: 138px;
+  width: min(440px, calc(100vw - 28px));
+  height: min(580px, calc(100vh - 160px));
+  display: none;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(15,26,51,.92);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  z-index: 70;
+}
+.poChatPanel.open{ display: flex; }
+
+.poChatHeader{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,.20);
+}
+.poChatTitle{ font-weight: 900; letter-spacing: .2px; }
+.poChatSub{ font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.poChatHeaderBtns{ display:flex; gap:8px; }
+.poChatMiniBtn{
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 900;
+}
+.poChatMiniBtn:hover{ background: rgba(255,255,255,.08); }
+
+.poChatBody{
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+  background: rgba(0,0,0,.12);
+}
+
+.poChatMsg{
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  max-width: 88%;
+  white-space: pre-wrap;
+  line-height: 1.35;
+  font-size: 14px;
+}
+.poChatUser{ margin-left: auto; background: rgba(125,211,252,.12); }
+.poChatBot{ background: rgba(255,255,255,.05); }
+
+.poChatForm{
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,.20);
+}
+.poChatInput{
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,.18);
+  color: var(--text);
+  font-size: 14px;
+}
+.poChatInput::placeholder{ color: rgba(185,192,212,.85); }
+
+.poChatSend{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 900;
+}
+.poChatSend:disabled{ opacity: .6; cursor: not-allowed; }
+
+.poChatFooterNote{
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,.20);
+}
