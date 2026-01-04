@@ -18,6 +18,14 @@
 }
 .poChatBubble:hover{ background: rgba(15,26,51,.95); }
 
+.poChatBubble, .poChatPanel{
+  pointer-events: auto;
+  z-index: 99999;
+}
+.stickyTools{
+  z-index: 60; /* keep your existing value lower */
+}
+
 .poChatPanel{
   position: fixed;
   right: 14px;
