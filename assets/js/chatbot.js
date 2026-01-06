@@ -1,118 +1,142 @@
-.poChatBubble{
-  position: fixed;
-  right: 14px;
-  bottom: 78px; /* sits above your existing stickyTools */
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: rgba(15,26,51,.85);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  color: var(--text);
-  font-weight: 900;
-  z-index: 70;
-}
-.poChatBubble:hover{ background: rgba(15,26,51,.95); }
+(function(){
+  const API_URL = "https://api.robbiemed.org/chat";
 
-.poChatPanel{
-  position: fixed;
-  right: 14px;
-  bottom: 138px;
-  width: min(440px, calc(100vw - 28px));
-  height: min(580px, calc(100vh - 160px));
-  display: none;
-  flex-direction: column;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: rgba(15,26,51,.92);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  z-index: 70;
-}
-.poChatPanel.open{ display: flex; }
+  const bubble = document.getElementById("poChatBubble");
+  const panel  = document.getElementById("poChatPanel");
+  const closeB = document.getElementById("poChatClose");
+  const resetB = document.getElementById("poChatReset");
+  const bodyEl = document.getElementById("poChatBody");
+  const form   = document.getElementById("poChatForm");
+  const input  = document.getElementById("poChatInput");
+  const sendB  = document.getElementById("poChatSend");
 
-.poChatHeader{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(0,0,0,.20);
-}
-.poChatTitle{ font-weight: 900; letter-spacing: .2px; }
-.poChatSub{ font-size: 12px; color: var(--muted); margin-top: 2px; }
+  if(!bubble || !panel || !form) return;
 
-.poChatHeaderBtns{ display:flex; gap:8px; }
-.poChatMiniBtn{
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.05);
-  color: var(--text);
-  padding: 6px 10px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: 900;
-}
-.poChatMiniBtn:hover{ background: rgba(255,255,255,.08); }
+  let previous_response_id = localStorage.getItem("po_previous_response_id") || null;
 
-.poChatBody{
-  flex: 1;
-  overflow: auto;
-  padding: 12px;
-  background: rgba(0,0,0,.12);
-}
+  function addMsg(text, who){
+    const div = document.createElement("div");
+    div.className = "poChatMsg " + (who === "user" ? "poChatUser" : "poChatBot");
+    div.textContent = text;
+    bodyEl.appendChild(div);
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+  }
 
-.poChatMsg{
-  margin: 10px 0;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  max-width: 88%;
-  white-space: pre-wrap;
-  line-height: 1.35;
-  font-size: 14px;
-}
-.poChatUser{ margin-left: auto; background: rgba(125,211,252,.12); }
-.poChatBot{ background: rgba(255,255,255,.05); }
+  function openChat(){
+    panel.classList.add("open");
+    panel.setAttribute("aria-hidden", "false");
+    input.focus();
 
-.poChatForm{
-  display: flex;
-  gap: 8px;
-  padding: 10px;
-  border-top: 1px solid var(--border);
-  background: rgba(0,0,0,.20);
-}
-.poChatInput{
-  flex: 1;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(0,0,0,.18);
-  color: var(--text);
-  font-size: 14px;
-}
-.poChatInput::placeholder{ color: rgba(185,192,212,.85); }
+    if (!bodyEl.dataset.greeted){
+      addMsg(
+        "Hi — tell me what you’re tolerating by mouth, whether you have a PEG or PEG-J (if applicable), and what symptoms are limiting you (nausea, vomiting, constipation, pain, reflux).",
+        "bot"
+      );
+      bodyEl.dataset.greeted = "1";
+    }
+  }
 
-.poChatSend{
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.05);
-  color: var(--text);
-  cursor: pointer;
-  font-weight: 900;
-}
-.poChatSend:disabled{ opacity: .6; cursor: not-allowed; }
+  function closeChat(){
+    panel.classList.remove("open");
+    panel.setAttribute("aria-hidden", "true");
+  }
 
-.poChatFooterNote{
-  padding: 10px 12px;
-  font-size: 12px;
-  color: var(--muted);
-  border-top: 1px solid var(--border);
-  background: rgba(0,0,0,.20);
-}
+  function formatStructured(r){
+    // If your Worker returns structured JSON, render it nicely
+    const lines = [];
+    if (r.summary) lines.push(r.summary.trim());
+
+    if (Array.isArray(r.plan_bullets) && r.plan_bullets.length){
+      lines.push("\nWhat to try today:");
+      r.plan_bullets.forEach(b => lines.push("• " + b));
+    }
+
+    if (Array.isArray(r.monitor_bullets) && r.monitor_bullets.length){
+      lines.push("\nWhat to monitor:");
+      r.monitor_bullets.forEach(b => lines.push("• " + b));
+    }
+
+    if (Array.isArray(r.when_to_call_clinic) && r.when_to_call_clinic.length){
+      lines.push("\nWhen to call your clinic/GI team:");
+      r.when_to_call_clinic.forEach(b => lines.push("• " + b));
+    }
+
+    if (Array.isArray(r.red_flags) && r.red_flags.length){
+      lines.push("\nSeek urgent care now if:");
+      r.red_flags.forEach(b => lines.push("• " + b));
+    }
+
+    if (r.disclaimer) lines.push("\n" + r.disclaimer.trim());
+    return lines.join("\n");
+  }
+
+  async function send(userText){
+    addMsg(userText, "user");
+    sendB.disabled = true;
+    input.disabled = true;
+
+    try{
+      const resp = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userText, previous_response_id }),
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data?.error || "Request failed");
+
+      // Save conversation anchor for multi-turn memory
+      if (data.previous_response_id){
+        previous_response_id = data.previous_response_id;
+        localStorage.setItem("po_previous_response_id", previous_response_id);
+      }
+
+      // Supports either:
+      // - { result: { ... } } structured
+      // - { text: "..." } simple
+      if (data.result && typeof data.result === "object"){
+        addMsg(formatStructured(data.result), "bot");
+      } else if (typeof data.text === "string" && data.text.trim()){
+        addMsg(data.text, "bot");
+      } else if (typeof data.raw_text === "string" && data.raw_text.trim()){
+        addMsg(data.raw_text, "bot");
+      } else {
+        addMsg("(No response returned.)", "bot");
+      }
+    } catch(e){
+      addMsg("Error: " + e.message, "bot");
+    } finally {
+      sendB.disabled = false;
+      input.disabled = false;
+      input.focus();
+    }
+  }
+
+  bubble.addEventListener("click", () => {
+    if (panel.classList.contains("open")) closeChat();
+    else openChat();
+  });
+
+  closeB.addEventListener("click", closeChat);
+
+  resetB.addEventListener("click", () => {
+    previous_response_id = null;
+    localStorage.removeItem("po_previous_response_id");
+    addMsg("Conversation reset.", "bot");
+  });
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const t = input.value.trim();
+    if (!t) return;
+    input.value = "";
+    send(t);
+  });
+
+  // Close when tapping outside (nice on mobile)
+  document.addEventListener("click", (e) => {
+    if (!panel.classList.contains("open")) return;
+    const clickedInside = panel.contains(e.target) || bubble.contains(e.target);
+    if (!clickedInside) closeChat();
+  });
+})();
